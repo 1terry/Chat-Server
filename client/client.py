@@ -14,11 +14,16 @@ clientSocket.connect((serverName,serverPort))
 
 clientName = '\nJoe: '
 
-sentence = clientName + input('Input lowercase sentence:') 
+sentence = clientName + input('Input lowercase sentence:\n') 
 clientSocket.send(sentence.encode())
+
 modifiedSentence = clientSocket.recv(1024)
 print('From Server: ', modifiedSentence.decode())
-clientSocket.close()
+modifiedSentence = clientSocket.recv(1024)
+print('From Server: ', modifiedSentence.decode())
+modifiedSentence = clientSocket.recv(1024)
+print('From Server: ', modifiedSentence.decode())
+# clientSocket.close()
 
 
 
