@@ -7,6 +7,7 @@ import signal
 from urllib.parse import urlparse
 
 from socket import *
+# randomize number later
 serverPort = 12000
 serverSocket = socket(AF_INET,SOCK_STREAM)
 serverSocket.bind(('',serverPort))
@@ -18,6 +19,8 @@ while True:
     capsSentence = sentence.upper()
     connectionSocket.send(capsSentence.encode())
     connectionSocket.close()
+
+
 
 # useful documentation
 
