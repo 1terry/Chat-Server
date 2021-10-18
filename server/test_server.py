@@ -12,9 +12,13 @@ stringList = []
 
 
 def accept(sock, mask):
-    conn, addr = sock.accept()
-    connectorList.append(conn)  # Should be ready
-    print('Accepted connection from', addr)
+    try:
+        conn, addr = sock.accept()
+        connectorList.append(conn)  # Should be ready
+        print('Accepted connection from', addr)
+    except:
+        if (connectorList.__contains__(conn)):
+            print("Error: Already connected")
     user = repr(conn.recv(1000))
     print('Waiting to recieve messages from user ' + user[1:])
     conn.setblocking(False)

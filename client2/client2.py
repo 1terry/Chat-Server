@@ -37,14 +37,21 @@ clientSocket.send(client2.userName.encode())
 
 clientName = "Vanessa: "
 
+exitCommand = False
+while exitCommand == False:
+    sentence = clientName + input('Enter a message:\n')
+    clientSocket.send(sentence.encode())
+    modifiedSentence = clientSocket.recv(1024)
+    if modifiedSentence != "":
+        print(modifiedSentence)
 
-sentence = clientName + input('Enter a message:\n')
-clientSocket.send(sentence.encode())
+# sentence = clientName + input('Enter a message:\n')
+# clientSocket.send(sentence.encode())
 
-modifiedSentence = clientSocket.recv(1024)
-print('From Server:\n', modifiedSentence.decode())
-modifiedSentence = clientSocket.recv(1024)
-print('From Server:\n', modifiedSentence.decode())
-modifiedSentence = clientSocket.recv(1024)
-print('From Server:\n', modifiedSentence.decode())
+# modifiedSentence = clientSocket.recv(1024)
+# print('From Server:\n', modifiedSentence.decode())
+# modifiedSentence = clientSocket.recv(1024)
+# print('From Server:\n', modifiedSentence.decode())
+# modifiedSentence = clientSocket.recv(1024)
+# print('From Server:\n', modifiedSentence.decode())
 # clientSocket.close()

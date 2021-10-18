@@ -35,16 +35,33 @@ except:
 clientSocket.send(client1.userName.encode())
 
 
-clientName = "Terry: "
+clientName = client1.userName + ": "
 
 
-sentence = clientName + input('Enter a message:\n')
-clientSocket.send(sentence.encode())
+# sentence = clientName + input('Enter a message:\n')
+# clientSocket.send(sentence.encode())
 
-modifiedSentence = clientSocket.recv(1024)
-print('From Server:\n', modifiedSentence.decode())
-modifiedSentence = clientSocket.recv(1024)
-print('From Server:\n', modifiedSentence.decode())
-modifiedSentence = clientSocket.recv(1024)
-print('From Server:\n', modifiedSentence.decode())
+# modifiedSentence = clientSocket.recv(1024)
+
+exitCommand = False
+while exitCommand == False:
+    sentence = clientName + input('Enter a message:\n')
+    clientSocket.send(sentence.encode())
+    modifiedSentence = clientSocket.recv(1024)
+    if modifiedSentence != "":
+        print(modifiedSentence)
+
+    # if clientSocket.recv(1024).decode() != "":
+    #     modifiedSentence = clientSocket.recv(1024)
+    #     print('From Server:\n', modifiedSentence.decode())
+    #     modifiedSentence = clientSocket.recv(1024)
+    # modifiedSentence = clientSocket.recv(1024)
+    # if (modifiedSentence != " "):
+    #     print('From Server:\n', modifiedSentence.decode())
+    #     modifiedSentence = clientSocket.recv(1024)
+    #     print('From Server:\n', modifiedSentence.decode())
+    #     modifiedSentence = clientSocket.recv(1024)
+    #     print('From Server:\n', modifiedSentence.decode())
+    # sentence = clientName + input('Enter a message:\n')
+
 # clientSocket.close()
