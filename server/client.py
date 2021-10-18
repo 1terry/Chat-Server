@@ -35,7 +35,7 @@ except:
 clientSocket.send(client1.userName.encode())
 
 
-clientName = "Vanessa: "
+clientName = "Terry: "
 
 
 sentence = clientName + input('Enter a message:\n')
