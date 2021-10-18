@@ -31,7 +31,12 @@ def read(conn, mask):
         userNames.append(user)
         stringMessage = stringMessage.strip("'")
         print("message from: @" + user + "\n" + stringMessage)
-        conn.send(data)
+
+        # make a for loop here for each connector
+        for x in connectorList:
+            x.send(data)
+        # conn.send(data)
+
     else:
         print('closing', conn)
         sel.unregister(conn)

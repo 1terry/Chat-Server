@@ -22,17 +22,17 @@ class client:
         self.port = parsedAddress.port
 
 
-client1 = client("Terry", "chat://" + serverName + ":" + str(serverPort))
+client2 = client("Vanessa", "chat://" + serverName + ":" + str(serverPort))
 
 try:
     clientSocket = socket(AF_INET, SOCK_STREAM)
     clientSocket.connect((serverName, serverPort))
     print("connectiong succesful")
 except:
-    print("A connection error occured")
+    print("A connection error occured, you may already be connected")
 
 
-clientSocket.send(client1.userName.encode())
+clientSocket.send(client2.userName.encode())
 
 
 clientName = "Vanessa: "
