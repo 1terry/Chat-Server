@@ -16,22 +16,22 @@ stringList = []
 
 def accept(sock, mask):
     try:
-        conn, addr = sock.accept()
-        connectorList.append(conn)  # Should be ready
-        print('Accepted connection from', addr)
+        connection, address = sock.accept()
+        connectorList.append(connection)
+        print('Accepted connection from', address)
     except:
-        if (connectorList.__contains__(conn)):
+        if (connectorList.__contains__(connection)):
             print("Error: Already connected")
-    user = repr(conn.recv(1000))
+
+    user = repr(connection.recv(1000))
     print('Waiting to recieve messages from user ' + user[1:])
-    conn.setblocking(False)
-    sel.register(conn, selectors.EVENT_READ, read)
+    connection.setblocking(False)
+    sel.register(connection, selectors.EVENT_READ, read)
 
 
 def read(conn, mask):
     data = conn.recv(1000)
     if data:
-        # print('echoing', repr(data), 'to', conn)
         stringMessage = repr(data)
         user, stringMessage = stringMessage.split(":", 1)
         user = user[2:]
@@ -42,7 +42,6 @@ def read(conn, mask):
         # make a for loop here for each connector
         for x in connectorList:
             x.send(formattedMessage.encode())
-        # conn.send(data)
 
     else:
         print('closing', conn)
