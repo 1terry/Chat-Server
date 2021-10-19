@@ -41,6 +41,8 @@ exitCommand = False
 while exitCommand == False:
     sentence = clientName + input('Enter a message:\n')
     clientSocket.send(sentence.encode())
+
+    # find a way to loop this
     modifiedSentence = clientSocket.recv(1024)
     if modifiedSentence != "":
         print(modifiedSentence)

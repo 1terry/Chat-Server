@@ -2,6 +2,9 @@ import selectors
 import socket
 # from client.client import client1
 
+# super good
+# https://realpython.com/python-sockets/#multi-connection-client-and-server
+
 sel = selectors.DefaultSelector()
 
 userNames = []
@@ -34,11 +37,11 @@ def read(conn, mask):
         user = user[2:]
         userNames.append(user)
         stringMessage = stringMessage.strip("'")
-        print("message from: @" + user + "\n" + stringMessage)
-
+        formattedMessage = "message from: @" + user + "\n" + stringMessage
+        print(formattedMessage)
         # make a for loop here for each connector
         for x in connectorList:
-            x.send(data)
+            x.send(formattedMessage.encode())
         # conn.send(data)
 
     else:
