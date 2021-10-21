@@ -1,108 +1,103 @@
-# import selectors
-# import socket
-# sel = selectors.DefaultSelector()
-# host = 'localhost'
-# port = 1234
-# # ...
-# lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# lsock.bind((host, port))
-# lsock.listen()
-# print('listening on', (host, port))
-# lsock.setblocking(False)
-# sel.register(lsock, selectors.EVENT_READ, data=None)
-
-# sel = selectors.DefaultSelector()
-
-# # ...
-
-
-# def service_connection(key, mask):
-#     sock = key.fileobj
-#     data = key.data
-#     if mask & selectors.EVENT_READ:
-#         recv_data = sock.recv(1024)  # Should be ready to read
-#         if recv_data:
-#             data.outb += recv_data
-#         else:
-#             print('closing connection to', data.addr)
-#             sel.unregister(sock)
-#             sock.close()
-#     if mask & selectors.EVENT_WRITE:
-#         if data.outb:
-#             print('echoing', repr(data.outb), 'to', data.addr)
-#             sent = sock.send(data.outb)  # Should be ready to write
-#             data.outb = data.outb[sent:]
-
-
-# def accept_wrapper(sock):
-#     conn, addr = sock.accept()  # Should be ready to read
-#     print('accepted connection from', addr)
-#     conn.setblocking(False)
-#     data = types.SimpleNamespace(addr=addr, inb=b'', outb=b'')
-#     events = selectors.EVENT_READ | selectors.EVENT_WRITE
-#     sel.register(conn, events, data=data)
-
-
-# while True:
-#     events = sel.select(timeout=None)
-#     for key, mask in events:
-#         if key.data is None:
-#             accept_wrapper(key.fileobj)
-#         else:
-#             service_connection(key, mask)
-
-#Use test server
 import selectors
 import socket
+# from client.client import client1
 
+# super good
+# https://realpython.com/python-sockets/#multi-connection-client-and-server
+
+sel = selectors.DefaultSelector()
+
+#Initializing Variables
+userNames = []
 connectorList = []
+user = ""
+stringMessage = ""
+stringList = []
+initField = []
 
-mysel = selectors.DefaultSelector()
-keep_running = True
 
-def read(connection, mask):
-    "Callback for read events"
-    global keep_running
-
-    client_address = connection.getpeername()
-    print('read({})'.format(client_address))
-    data = connection.recv(1024)
-    if data:
-        # A readable client socket has data
-        print('  received {!r}'.format(data))
-        # connection.sendall(data)
-        for x in connectorList:
-            x.send(data)
-    else:
-        # Interpret empty result as closed connection
-        print('  closing')
-        mysel.unregister(connection)
-        connection.close()
-        # Tell the main loop to stop
-        keep_running = False
-
+#Defines acceptance of a new connection
 def accept(sock, mask):
-    "Callback for new connections"
-    new_connection, addr = sock.accept()
-    print('accept({})'.format(addr))
-    new_connection.setblocking(0)
-    connectorList.append(new_connection)
-    mysel.register(new_connection, selectors.EVENT_READ, read)
+    try:
+        connection, address = sock.accept()
+        connectorList.append(connection)
+        print('Accepted connection from', address)
+    except:
+        print("Error, invalid registration")
+        connection.sendall(("400 Invalid registration").encode())
 
-server_address = ('localhost', 1234)
-print('starting up on {} port {}'.format(*server_address))
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setblocking(0)
-server.bind(server_address)
-server.listen(5)
+    #format text
+    user = repr(connection.recv(1000))
+    initField = user.split()
+    user = initField[1]
+    if (user in userNames):
+        #tHIS IS BEING SENT, WHY NOT RECIEVED??
+        connection.sendall(("401 Client already registered").encode())
+        #remove this later
+        print("Client already registered, closing connection")
+    else:
+        userNames.append(user)
+    #Check if user is registered
 
-mysel.register(server, selectors.EVENT_READ, accept)
+    print('Waiting to recieve messages from user ' + user)
+    connection.setblocking(False)
+    sel.register(connection, selectors.EVENT_READ, read)
 
-while keep_running:
-    # print('waiting for I/O')
-    for key, mask in mysel.select(timeout=1):
-        callback = key.data
-        callback(key.fileobj, mask)
+#Defines read state of server
+def read(conn, mask):
+    data = conn.recv(1000)
+    if data:
+        stringMessage = repr(data)
 
-print('shutting down')
-mysel.close()
+        #Disconnects user if message is sent
+        if stringMessage == "b'DISCONNECT username CHAT/1.0'":
+            elementPosition = connectorList.index(conn)
+            elementName = userNames[elementPosition]
+            print('Disconnecting user ' + elementName)
+            userNames.remove(elementName)
+            sel.unregister(conn)
+            connectorList.remove(conn)
+            conn.close()
+
+        else:
+            user, stringMessage = stringMessage.split(":", 1)
+            user = user[2:]
+            stringMessage = stringMessage.strip("'")
+            formattedMessage = "Recieved message from user " + user + ": " + stringMessage
+            print(formattedMessage)
+
+            # make a for loop here for each connector
+            for x in connectorList:
+                x.send((user + ": " + stringMessage).encode())
+
+    else:
+        # elementPosition = connectorList.index(conn)
+        # elementName = userNames[elementPosition]
+        # print('Disconnecting user ' + elementName)
+        # userNames.remove(elementName)
+        # sel.unregister(conn)
+        # connectorList.remove(conn)
+        # conn.close()
+
+
+sock = socket.socket()
+sock.bind(('localhost', 1234)) 
+sock.listen(100)
+print('The server is ready to recieve messages')
+sock.setblocking(False)
+sel.register(sock, selectors.EVENT_READ, accept)
+
+#Loop checking for inpujt
+while True:
+    events = sel.select()
+    for key, mask in events:
+        try:
+            callback = key.data
+            callback(key.fileobj, mask)
+        except KeyboardInterrupt:
+            print ("\n Interrupt Recieved, disconnecting user")
+            sock.send("DISCONNECT username CHAT/1.0".encode())
+            mysel.unregister(connection)
+            connection.close()
+            mysel.close() 
+            sys.exit()
