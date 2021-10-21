@@ -1,59 +1,75 @@
-import argparse
 import selectors
 import socket
-import os
 import sys
-import signal
-from urllib.parse import urlparse
+import select
 
-from socket import *
-serverName = 'localhost'
-serverPort = 1234
+mysel = selectors.DefaultSelector()
+keep_running = True
 
-print("connecting to server...")
+# Connecting is a blocking operation, so call setblocking()
+server_address = ('localhost', 1234)
+print('connecting to {} port {}'.format(*server_address))
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(server_address)
+sock.setblocking(False)
 
+mysel.register(
+    sock, 
+    selectors.EVENT_WRITE,
+)
 
-class client:
-    def __init__(self, userName, address):
-        self.userName = userName
-        self.address = address
-        parsedAddress = urlparse(address)
-        self.host = parsedAddress.hostname
-        self.port = parsedAddress.port
+#Registers user
+inputUser = "Terry"
+sock.sendall(("REGISTER " + inputUser + " CHAT/1.0").encode())
 
-
-client2 = client("Vanessa", "chat://" + serverName + ":" + str(serverPort))
-
+#Checks if data is being sent from server, in case there is an error with registration 
 try:
-    clientSocket = socket(AF_INET, SOCK_STREAM)
-    clientSocket.connect((serverName, serverPort))
-    print("connectiong succesful")
+    #returning server thingy
+    data = repr(connection.recv(1024))
+    if data == "401 Client already registered":
+        print("Error, client already registered")
+    elif data == "400 Invalid registration":
+        print("Error, invalid registration")
+    sys.exit(0)
+    doNothing = True
 except:
-    print("A connection error occured, you may already be connected")
+    #
+    doNothing = True
 
+print("Server running, start messaging!")
 
-clientSocket.send(client2.userName.encode())
+while keep_running:
+    # print('waiting for I/O')
+    for key, mask in mysel.select(timeout=1):
+        connection = key.fileobj
 
+        if mask & selectors.EVENT_WRITE:
+            input = select.select([sys.stdin], [], [], 1)[0]
+            outgoing = input
+            if input:
+                value = sys.stdin.readline().rstrip()
+                next_msg = ("Terry: " + value).encode()
+                sock.sendall(next_msg)    
+                #Change this to signal
+                # if (value == "q"):
+                #     print ("Exiting")
+                # else:
+                    # print ("You entered: %s" % value)
+                    # doNothing = True
 
-clientName = "Vanessa: "
+            #try this
+            try:
+                data = repr(connection.recv(1024))
+                data = data.strip("'")
+                username, recievedMessage = data.split(":", 1)
+                username = username[2:]
+                if (username != inputUser):
+                    print("    @" + username + ": " + recievedMessage)
+            except:
+                # does nothing
+                doNothing = True
 
-exitCommand = False
-while exitCommand == False:
-    sentence = clientName + input('Enter a message:\n')
-    clientSocket.send(sentence.encode())
-
-    # find a way to loop this
-    modifiedSentence = clientSocket.recv(1024)
-    if modifiedSentence != "":
-        print(modifiedSentence)
-
-# sentence = clientName + input('Enter a message:\n')
-# clientSocket.send(sentence.encode())
-
-# modifiedSentence = clientSocket.recv(1024)
-# print('From Server:\n', modifiedSentence.decode())
-# modifiedSentence = clientSocket.recv(1024)
-# print('From Server:\n', modifiedSentence.decode())
-# modifiedSentence = clientSocket.recv(1024)
-# print('From Server:\n', modifiedSentence.decode())
-# clientSocket.close()
+print('shutting down')
+mysel.unregister(connection)
+connection.close()
+mysel.close() 
