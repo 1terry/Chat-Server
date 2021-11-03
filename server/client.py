@@ -107,7 +107,9 @@ while keep_running:
             #Filters server messages so that only messages from other users are displayed
             try:
                 username, recievedMessage = data.split(":", 1)
-                if (username != inputUser):
+                if (username == "Users" or username == "Followed items"):
+                    print(username + ": " + recievedMessage)
+                elif (username != inputUser):
                     print("    @" + username + ": " + recievedMessage)
 
             #Catches a differently formatted message and ignores

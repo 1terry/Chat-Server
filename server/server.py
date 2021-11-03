@@ -11,6 +11,7 @@ Server will also display control messages such as error and disconnect messages
 import selectors
 import socket
 import sys
+from array import *
 
 #Initializes selectors and variables
 sel = selectors.DefaultSelector()
@@ -20,6 +21,42 @@ user = ""
 stringMessage = ""
 stringList = []
 initField = []
+followList = []
+
+def checkCommands(userCommand, user_index):
+    #All strings have a space at the start when sent, so we include these in comparisons
+    userList = ""
+    followedTerms = ""
+
+    #Checks if list command is entered and sends using :, as this will be split
+    if (userCommand == " !list"):
+        for x in userNames:
+           userList = userList + x + ", "
+        print("Users: " + userList)
+        connectorList[user_index].send(("Users: " + userList).encode())
+
+
+    #If the user enters !follow?, list will be displayed
+    elif (userCommand == " !follow?"):
+        
+        for x in followList[user_index]:
+            followedTerms = followedTerms + x + ", "
+        displayFollowed = "Followed items: " + followedTerms
+        print(displayFollowed)
+        connectorList[user_index].send((displayFollowed).encode())
+
+    #Adds item to follow list
+    elif (if "!follow" in userCommand):
+        topics = userCommand.split()
+        followList[user_index].append(topics[1])
+        print(displayFollowed)
+
+    #removes item from follow list
+    elif (if "!unfollow" in userCommand):
+        topics = userCommand.split()
+        followList[user_index].remove(topics[1])
+    #If the user enters
+    
 
 #Method runs on acceptance of a new connection, takes in input of socket and mask
 def accept(sock, mask):
@@ -49,6 +86,16 @@ def accept(sock, mask):
         #Otherwise, registers connection and user name and sends message to client
         else:
             userNames.append(user)
+            newUser = len(userNames) - 1
+            followList.append([])     #Increases list size and adds items
+            followList[newUser].append(user)
+            followList[newUser].append("@all")
+
+            #Debug
+            # print(newUser)
+            # print(followList[newUser])
+            #
+
             print('Connection established, waiting to recieve messages from user "' + user + '"...')
             connection.setblocking(False)
             sel.register(connection, selectors.EVENT_READ, read)
@@ -56,9 +103,10 @@ def accept(sock, mask):
 
     #Returns error if registration message is bad
     #This shouold never happen however, as the registration fromat will be hardcoded
-    except:
+    except Exception as e:
         print("Error, invalid registration")
         connection.sendall(("400 Invalid registration").encode())
+        print(e)
     
 
 #Method defines read state of the server, takes in a connection and a mask
@@ -68,10 +116,12 @@ def read(conn, mask):
         #Formats message recieved
         stringMessage = repr(data)
         stringMessage = stringMessage[2:len(stringMessage)-1]
+        elementPosition = connectorList.index(conn)
+
 
         #Disconnects user if disconnect is sent, removes and unregisters connections and prints result
         if stringMessage == "DISCONNECT username CHAT/1.0":
-            elementPosition = connectorList.index(conn)
+            # elementPosition = connectorList.index(conn)
             elementName = userNames[elementPosition]
             print("Recieved message from user " + elementName + ": " + "DISCONNECT " + elementName + " CHAT/1.0")
             print('Disconnecting user ' + elementName)
@@ -86,9 +136,14 @@ def read(conn, mask):
             formattedMessage = "Recieved message from user " + user + ": " + stringMessage
             print(formattedMessage)
 
-            #Sends message to all connections
-            for x in connectorList:
-                x.send((user + ": " + stringMessage).encode())
+
+            checkCommands(stringMessage, elementPosition)
+
+
+            if (stringMessage[1] != "!"):
+                #Sends message to all connections if a command is not entered
+                for x in connectorList:
+                    x.send((user + ": " + stringMessage).encode())
 
 
 #Binds socket and generates a random port, then listens on it
