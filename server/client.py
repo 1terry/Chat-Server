@@ -94,7 +94,31 @@ while keep_running:
             #Checks user input in terminal and sends to 
             input = select.select([sys.stdin], [], [], 1)[0]
             if input:
+                #working
                 value = sys.stdin.readline().rstrip()
+                
+                # If command !attach is used, tries to send file
+                # if "!attach" in value:
+                #     print("hi")
+                #     parts = value.split()
+                #     fileName = parts[1]
+                #     givenTerms = parts[2]
+                #     size = os.path.getsize(os.path.basename(fileName))
+                #     print("File is " + str(size) + "bytes")
+                #     buffer_size = int(size)
+                #     try:
+                #         with open(fileName, "rb") as f:
+                #             while True:
+                #                 bytes_read = f.read(buffer_size)
+                #                 if not bytes_read:
+                #                     break
+                #                 s.sendall(bytes_read)
+                #     except:
+                #         print("Error, file not found")
+                # Make sure this works
+
+
+                #working
                 next_msg = (inputUser + ": " + value).encode()
                 sock.sendall(next_msg)    
 
@@ -110,8 +134,8 @@ while keep_running:
                 username, recievedMessage = data.split(":", 1)
                 if (username == "Users" or username == "Followed items"):
                     print(username + ": " + recievedMessage)
-                elif (username != "@" + inputUser):
-                    print("   " + username + ": " + recievedMessage)
+                elif (username != inputUser):
+                    print("   @" + username + ": " + recievedMessage)
 
             #Catches a differently formatted message and ignores
             except:

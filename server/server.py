@@ -11,6 +11,7 @@ Server will also display control messages such as error and disconnect messages
 import selectors
 import socket
 import sys
+import os
 from array import *
 
 #Initializes selectors and variables
@@ -27,6 +28,7 @@ def checkCommands(userCommand, user_index, user):
     #All strings have a space at the start when sent, so we include these in comparisons
     userList = ""
     followedTerms = ""
+    buffer_size = 0
 
     #Checks if list command is entered and sends using :, as this will be split
     if (userCommand == " !list"):
@@ -93,6 +95,34 @@ def checkCommands(userCommand, user_index, user):
     elif ("!exit" in userCommand):
         connectorList[user_index].send(("DISCONNECT CHAT/1.0").encode()) #Remove from lists and such
       
+    #Attaching a file
+    elif ("!attach" in userCommand):
+        parts = userCommand.split()
+        fileName = parts[1]
+        givenTerms = parts[2]
+
+        #Gets the location of the current directory
+        print(os.path.basename(fileName))
+
+        #Gets the size of the file, enters an error if the file is not found
+        try:
+            size = os.path.getsize(os.path.basename(fileName))
+            print("File is " + str(size) + " bytes")
+            buffer_size = int(size)
+
+            # Not super sure how to get this working
+            # with open(fileName, "wb") as f:
+            #     while True:
+            #         bytes_read = client_socket.recv(buffer_size)
+            #         if not bytes_read:
+            #             break
+            #         f.write(bytes_read)
+            #     print("file writing done")
+            # Everything outside this section works tho
+
+        except:
+            print("File not found, please check file name")
+
     #Otherwise, broadcasts the message to other users
     else:    
 
@@ -103,6 +133,11 @@ def checkCommands(userCommand, user_index, user):
         for x in userCommand:
             userMessage = userMessage + " " + x
             print(x)
+
+        #Consider making seperate loops instead of nested loops?
+
+        for x in userCommand:
+
             #Change these shitty variable names
             for y in followList:
                 for z in y:
