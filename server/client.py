@@ -40,10 +40,11 @@ def checkData(data):
 
     #Disconnects chat if server is closed and prints message
     if data == "DISCONNECT CHAT/1.0":
-        print ("Sever closed, disconnecting user")
+        print ("Disconnecting user...")
         connection.close()
         mysel.unregister(connection)
         mysel.close() 
+        print("User disconnected")
         sys.exit()
 
     #Prints message if connection is accepted succesfully
@@ -109,8 +110,8 @@ while keep_running:
                 username, recievedMessage = data.split(":", 1)
                 if (username == "Users" or username == "Followed items"):
                     print(username + ": " + recievedMessage)
-                elif (username != inputUser):
-                    print("    @" + username + ": " + recievedMessage)
+                elif (username != "@" + inputUser):
+                    print("   " + username + ": " + recievedMessage)
 
             #Catches a differently formatted message and ignores
             except:

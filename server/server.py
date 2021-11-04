@@ -23,7 +23,7 @@ stringList = []
 initField = []
 followList = []
 
-def checkCommands(userCommand, user_index):
+def checkCommands(userCommand, user_index, user):
     #All strings have a space at the start when sent, so we include these in comparisons
     userList = ""
     followedTerms = ""
@@ -35,28 +35,84 @@ def checkCommands(userCommand, user_index):
         print("Users: " + userList)
         connectorList[user_index].send(("Users: " + userList).encode())
 
-
     #If the user enters !follow?, list will be displayed
     elif (userCommand == " !follow?"):
-        
+            #Gets list and prints as string
         for x in followList[user_index]:
             followedTerms = followedTerms + x + ", "
-        displayFollowed = "Followed items: " + followedTerms
+            displayFollowed = "Followed items: " + followedTerms
         print(displayFollowed)
         connectorList[user_index].send((displayFollowed).encode())
 
+    #Check that follow is 
+
     #Adds item to follow list
-    elif (if "!follow" in userCommand):
+    elif ("!follow" in userCommand):
+
+            #Gets list and prints as string
+        for x in followList[user_index]:
+            followedTerms = followedTerms + x + ", "
+            displayFollowed = "Followed items: " + followedTerms
+
         topics = userCommand.split()
+
+        if topics[1] in followList[user_index]:
+           print("Topic already present")
+           connectorList[user_index].send(("Error: Topic already present").encode()) 
+
         followList[user_index].append(topics[1])
         print(displayFollowed)
 
     #removes item from follow list
-    elif (if "!unfollow" in userCommand):
+    elif ("!unfollow" in userCommand):
+
+        for x in followList[user_index]:
+            followedTerms = followedTerms + x + ", "
+            displayFollowed = "Followed items: " + followedTerms
+        print(displayFollowed)
+
         topics = userCommand.split()
-        followList[user_index].remove(topics[1])
-    #If the user enters
+
+        if (topics[1] == "@all" or topics[1] == userNames[user_index]):
+            connectorList[user_index].send(("Error: Cannot remove tags").encode())
+            print("Cannot remove tags")
+
+        #Tries to remove the followed item from the list and outputs error if it does not exist
+        else:
+            try:
+                followList[user_index].remove(topics[1])
+            except:
+                connectorList[user_index].send(("Error: Tags not in follow list").encode())
+                print("Tags not in follow list")
+
+        print(displayFollowed)
+
     
+    #If the user enters exit, the server exits
+    #Make sure to deal with connections and stuff
+    elif ("!exit" in userCommand):
+        connectorList[user_index].send(("DISCONNECT CHAT/1.0").encode()) #Remove from lists and such
+      
+    #Otherwise, broadcasts the message to other users
+    else:    
+
+        #loop through each word to compare followed terms to the users message
+        userCommand = userCommand.split()
+        userMessage = ""
+        
+        for x in userCommand:
+            userMessage = userMessage + " " + x
+            print(x)
+            #Change these shitty variable names
+            for y in followList:
+                for z in y:
+                    #Breaks out of loop of current user
+                    if x == z:
+                        print(user + ": " + userMessage)
+                        connectorList[followList.index(y)].send((user + ": " + userMessage).encode())
+                        break
+            
+
 
 #Method runs on acceptance of a new connection, takes in input of socket and mask
 def accept(sock, mask):
@@ -83,19 +139,19 @@ def accept(sock, mask):
             print("Client already registered, closing connection")
             connectorList.remove(connection)
 
+        #Ensures that user cannot register as "all"
+        elif (user == "all"):
+            connection.sendall(("401 Client already registered").encode())
+            print("Cannot register under reserved username, closing connection")
+            connectorList.remove(connection)
+
         #Otherwise, registers connection and user name and sends message to client
         else:
             userNames.append(user)
             newUser = len(userNames) - 1
             followList.append([])     #Increases list size and adds items
-            followList[newUser].append(user)
+            followList[newUser].append("@" + user)
             followList[newUser].append("@all")
-
-            #Debug
-            # print(newUser)
-            # print(followList[newUser])
-            #
-
             print('Connection established, waiting to recieve messages from user "' + user + '"...')
             connection.setblocking(False)
             sel.register(connection, selectors.EVENT_READ, read)
@@ -137,14 +193,7 @@ def read(conn, mask):
             print(formattedMessage)
 
 
-            checkCommands(stringMessage, elementPosition)
-
-
-            if (stringMessage[1] != "!"):
-                #Sends message to all connections if a command is not entered
-                for x in connectorList:
-                    x.send((user + ": " + stringMessage).encode())
-
+            checkCommands(stringMessage, elementPosition, user)
 
 #Binds socket and generates a random port, then listens on it
 sock = socket.socket()
