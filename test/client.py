@@ -12,6 +12,8 @@ import socket
 import sys
 import select
 import signal
+import tqdm
+
 from urllib.parse import urlparse
 
 #Initializes variables
@@ -40,10 +42,11 @@ def checkData(data):
 
     #Disconnects chat if server is closed and prints message
     if data == "DISCONNECT CHAT/1.0":
-        print ("Sever closed, disconnecting user")
+        print ("Disconnecting user...")
         connection.close()
         mysel.unregister(connection)
         mysel.close() 
+        print("User disconnected")
         sys.exit()
 
     #Prints message if connection is accepted succesfully
@@ -93,7 +96,54 @@ while keep_running:
             #Checks user input in terminal and sends to 
             input = select.select([sys.stdin], [], [], 1)[0]
             if input:
+                #working
                 value = sys.stdin.readline().rstrip()
+                
+                # If command !attach is used, tries to send file
+                if "!attach" in value:
+                    # This stuff works so far
+                    parts = value.split()
+                    fileName = parts[1]
+                    givenTerms = parts[2]
+                    print(fileName)
+
+                    #this not working
+                    size = os.path.getsize(os.path.basename(fileName))
+                    print("File is " + str(size) + "bytes")
+                    next_msg = (inputUser + ": " + value).encode()
+                    sock.sendall(next_msg)    
+                    BUFFER_SIZE = 4096
+
+                    # Now lets see if this works
+                    progress = tqdm.tqdm(range(filesize), f"Sending {fileName}", unit="B", unit_scale=True, unit_divisor=1024)
+                    with open(fileName, "rb") as f:
+                        while True:
+                            # read the bytes from the file
+                            bytes_read = f.read(BUFFER_SIZE)
+                            if not bytes_read:
+                                # file transmitting is done
+                                break
+                            # we use sendall to assure transimission in 
+                            # busy networks
+                            s.sendall(bytes_read)
+                            # update the progress bar
+                            progress.update(len(bytes_read))
+
+                    # sock.sendall()
+                #     buffer_size = int(size)
+                #     try:
+                #         with open(fileName, "rb") as f:
+                #             while True:
+                #                 bytes_read = f.read(buffer_size)
+                #                 if not bytes_read:
+                #                     break
+                #                 s.sendall(bytes_read)
+                #     except:
+                #         print("Error, file not found")
+                # Make sure this works
+
+
+                #working
                 next_msg = (inputUser + ": " + value).encode()
                 sock.sendall(next_msg)    
 
@@ -107,8 +157,10 @@ while keep_running:
             #Filters server messages so that only messages from other users are displayed
             try:
                 username, recievedMessage = data.split(":", 1)
-                if (username != inputUser):
-                    print("    @" + username + ": " + recievedMessage)
+                if (username == "Users" or username == "Followed items"):
+                    print(username + ": " + recievedMessage)
+                elif (username != inputUser):
+                    print("   @" + username + ": " + recievedMessage)
 
             #Catches a differently formatted message and ignores
             except:
@@ -133,3 +185,4 @@ while keep_running:
     #Server is likely closed, so we exit the program
     except Exception:
         sys.exit() 
+
