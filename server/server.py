@@ -26,11 +26,12 @@ initField = []
 followList = []
 
 
-def checkCommands(userCommand, user_index, user):
+def checkCommands(userCommand, user_index, user, conn):
     # All strings have a space at the start when sent, so we include these in comparisons
     userList = ""
     followedTerms = ""
     buffer_size = 0
+    # print(userCommand)
 
     # Checks if list command is entered and sends using :, as this will be split
     if (userCommand == " !list"):
@@ -40,7 +41,7 @@ def checkCommands(userCommand, user_index, user):
         connectorList[user_index].send(("Users: " + userList).encode())
 
     # If the user enters !follow?, list will be displayed
-    elif (userCommand == " !follow?"):
+    elif ("!follow?" in userCommand):
         # Gets list and prints as string
         for x in followList[user_index]:
             followedTerms = followedTerms + x + ", "
@@ -60,14 +61,15 @@ def checkCommands(userCommand, user_index, user):
 
         topics = userCommand.split()
 
-        if topics[1] in followList[user_index]:
+        print(topics[2])
+        if topics[2] in followList[user_index]:
             print("Topic already present")
             connectorList[user_index].send(
                 ("Error: Topic already present").encode())
         else:
-            followList[user_index].append(topics[1])
+            followList[user_index].append(topics[2])
             connectorList[user_index].send(
-                ("Now following: " + topics[1]).encode())
+                ("Now following: " + topics[2]).encode())
 
         print(displayFollowed)
 
@@ -105,30 +107,33 @@ def checkCommands(userCommand, user_index, user):
 
     # Attaching a file
     elif ("!attach" in userCommand):
+        #Add a try and except statement
         parts = userCommand.split()
-        fileName = parts[1]
-        givenTerms = parts[2]
+        fileName = parts[2]
+        givenTerms = parts[3]
 
         # Gets the location of the current directory
-        print(os.path.basename(fileName))
+
+        print("Attached file: " + os.path.basename(fileName))
+        # size = os.path.getsize(os.path.basename(fileName)fileName)
+        # print("File is " + str(size) + " bytes")
 
         # Gets the size of the file, enters an error if the file is not found
         try:
-            size = os.path.getsize(os.path.basename(fileName))
-            print("File is " + str(size) + " bytes")
-            size = int(size)
+            # size = os.path.getsize(os.path.basename(fileName))
 
             # recieves file
-            with open('received_file', 'wb') as f:
+            with open(fileName, 'w') as f:
                 print("file recieved from: " + userNames[user_index])
                 while True:
                     print('receiving data...')
-                    data = sock.recv(1024)
-                    print('data:', (data))
+                    data = conn.recv(1000)
+                    if data:
+                        print('data:', (data))
                     if not data:
                         break
                 # write data to a file
-                f.write(data)
+                f.write(repr(data))
 
             # sends file to client
 
@@ -151,8 +156,8 @@ def checkCommands(userCommand, user_index, user):
             # sending part done
             # File section done
 
-        except:
-            print("File not found, please check file name")
+        except Exception as e:
+            print(e)
 
     # Otherwise, broadcasts the message to other users
     else:
@@ -178,29 +183,6 @@ def checkCommands(userCommand, user_index, user):
                         connectorList[followList.index(y)].send(
                             (user + ": " + userMessage).encode())
                         break
-
-
-def sendFollowed(userArgs, isFile):
-    userArgs = userArgs.split()
-    userMessage = ""
-
-    for x in userArgs:
-        userMessage = userMessage + " " + x
-        print(x)
-
-    # Consider making seperate loops instead of nested loops?
-
-    for x in userArgs:
-
-        # Change these shitty variable names
-        for y in followList:
-            for z in y:
-                # Breaks out of loop of current user
-                if x == z:
-                    print(user + ": " + userMessage)
-                    connectorList[followList.index(y)].send(
-                        (user + ": " + userMessage).encode())
-                    break
 
 
 # Method runs on acceptance of a new connection, takes in input of socket and mask
@@ -278,15 +260,26 @@ def read(conn, mask):
 
         # Formats message from user and prints
         else:
-            print(stringMessage)
-            
-            #Put an if statement if a file is being recieved, then a while loop that exits upon exit message
 
-            user, stringMessage = stringMessage.split(":", 1)
-            formattedMessage = "Recieved message from user " + user + ": " + stringMessage
-            print(formattedMessage)
+            # Put an if statement if a file is being recieved, then a while loop that exits upon exit message
 
-            checkCommands(stringMessage, elementPosition, user)
+            #     filler, user, stringMessage = stringMessage.split(":", 2)
+            #     print("Reading file " + stringMessage)
+
+            # stringMessage = repr(data)
+            # stringMessage = stringMessage[2:len(stringMessage)-1]
+            # print(stringMessage)
+            # else:
+            # fix this
+            # user, stringMessage =  stringMessage.split(":", 1)
+            # formattedMessage = "Recieved message from user " + user + ": " + stringMessage
+            # print(formattedMessage)
+            print("Message recieved " + stringMessage)
+            user = userNames[elementPosition]
+
+            checkCommands(stringMessage, elementPosition, user, conn)
+
+
 
 
 # Binds socket and generates a random port, then listens on it

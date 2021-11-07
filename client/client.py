@@ -105,13 +105,22 @@ while keep_running:
                 # If command !attach is used, tries to send file
                 if "!attach" in value:
                     # This stuff works so far
+                    next_msg = (inputUser + ": " + value).encode()
+                    sock.sendall(next_msg)
                     parts = value.split()
                     fileName = parts[1]
                     givenTerms = parts[2]
-                    print("Sending " + fileName)
 
+                    #File size 
+                    print(os.path.getsize(os.path.basename(fileName)))
+
+                    print("Sending: " + inputUser + ": " + fileName)
+
+                    #GET FILESIZE AND SEND
+                    # print("File size: " + size)
                     # Sends file to server
                     # Maybe keep sending until a message END OF FILE
+                    # sock.send(("fileStart: " + inputUser + ": " + fileName).encode())
                     f = open(fileName, 'rb')
                     l = f.read(1024)
                     while (l):
@@ -119,7 +128,9 @@ while keep_running:
                         print('Sent ', repr(l))
                         l = f.read(1024)
                     f.close()
-                    # sock.send(("FILE FINISHED SENDING").encode())
+                    sock.send(("fileEnd").encode())
+                    #Kinda gimmicky, should fix
+                    # sock.send((inputUser + (": File sent")).encode())
 
                 # working
                 else:
