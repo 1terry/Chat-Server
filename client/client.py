@@ -6,6 +6,8 @@ Client will take in parameters as arguments in the terminal and connect to the s
 Client will be able to connect to other clients and send and recieve messages from them
 """
 
+#https://www.youtube.com/watch?v=7Z_uQKV7RLI
+
 # Libraries and packages used
 import selectors
 import socket
@@ -50,6 +52,10 @@ def checkData(data):
         mysel.close()
         print("User disconnected")
         sys.exit()
+
+    # If data is a file being sent
+    if data == "File-Sent":
+        print("file being recived")
 
     # Prints message if connection is accepted succesfully
     if data == "200 Registration successful":
@@ -112,20 +118,22 @@ while keep_running:
                     givenTerms = parts[2]
 
                     #File size 
-                    print(os.path.getsize(os.path.basename(fileName)))
+                    print("File size: ", os.path.getsize(os.path.basename(fileName)))
 
                     print("Sending: " + inputUser + ": " + fileName)
 
                     #GET FILESIZE AND SEND
-                    # print("File size: " + size)
                     # Sends file to server
                     # Maybe keep sending until a message END OF FILE
                     # sock.send(("fileStart: " + inputUser + ": " + fileName).encode())
+                    
                     f = open(fileName, 'rb')
                     l = f.read(1024)
+                    # sock.send("!fileOpen " + fileName)
                     while (l):
-                        sock.send(l)
+                        sock.send((" !fileReading: " + fileName + ": " ).encode() + l)
                         print('Sent ', repr(l))
+                        print('sent ' + fileName)
                         l = f.read(1024)
                     f.close()
                     sock.send(("fileEnd").encode())

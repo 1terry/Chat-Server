@@ -24,9 +24,10 @@ stringMessage = ""
 stringList = []
 initField = []
 followList = []
+global fileName
+thisFile = ""
 
-
-def checkCommands(userCommand, user_index, user, conn):
+def checkCommands(userCommand, user_index, user, conn, fileSending):
     # All strings have a space at the start when sent, so we include these in comparisons
     userList = ""
     followedTerms = ""
@@ -107,57 +108,77 @@ def checkCommands(userCommand, user_index, user, conn):
 
     # Attaching a file
     elif ("!attach" in userCommand):
-        #Add a try and except statement
-        parts = userCommand.split()
-        fileName = parts[2]
-        givenTerms = parts[3]
-
-        # Gets the location of the current directory
-
-        print("Attached file: " + os.path.basename(fileName))
+     
         # size = os.path.getsize(os.path.basename(fileName)fileName)
         # print("File is " + str(size) + " bytes")
 
         # Gets the size of the file, enters an error if the file is not found
         try:
             # size = os.path.getsize(os.path.basename(fileName))
+               #Add a try and except statement
+            parts = userCommand.split()
+            fileName = parts[2]
+            givenTerms = parts[3]
+            print(fileName)
+            global thisFile
+            thisFile = fileName     
 
-            # recieves file
-            with open(fileName, 'w') as f:
-                print("file recieved from: " + userNames[user_index])
-                while True:
-                    print('receiving data...')
-                    data = conn.recv(1000)
-                    if data:
-                        print('data:', (data))
-                    if not data:
-                        break
-                # write data to a file
-                f.write(repr(data))
+
+        # Gets the location of the current directory
 
             # sends file to client
 
             # Sending part
-            for x in givenTerms:
-                for y in followList:
-                    for z in y:
-                        # Breaks out of loop of current user
-                        if x == z:
-                            print(user + "sent the following file: " + fileName)
-                            f = open(fileName, 'rb')
-                            l = f.read(1024)
-                            while (l):
-                                connectorList[followList.index(y)].send(l)
-                                print('Sent: ', repr(l))
-                                l = f.read(1024)
-                            f.close()
-                            break
+            # for x in givenTerms:
+            #     for y in followList:
+            #         for z in y:
+            #             # Breaks out of loop of current user
+            #             if x == z:
+            #                 print(user + "sent the following file: " + fileName)
+            #                 f = open(fileName, 'rb')
+            #                 l = f.read(1024)
+            #                 while (l):
+            #                     connectorList[followList.index(y)].send(l)
+            #                     print('Sent: ', repr(l))
+            #                     l = f.read(1024)
+            #                 f.close()
+            #                 break
 
             # sending part done
             # File section done
 
         except Exception as e:
             print(e)
+
+    # elif "!fileOpen" in userCommand:
+    #     fileName = userCommand.split(" ")
+    #     f = open(fileName[1], 'wb')
+    #     thisFile = fileName
+
+    elif "!fileReading" in userCommand:
+        data = userCommand.split(":", 2)
+        # fileName = data[1]
+        print(thisFile)
+        f = open(thisFile, 'wb')
+        print("file recieved from: " + userNames[user_index])
+        print('receiving data from file')
+        # data = conn.recv(1000)
+        # print('data:', (data[2]))
+        # write data to a file
+        # try:
+        # print(data[2])
+        try:
+            fileCharacters = str(data[2])
+        except:
+            print((data))
+        print(fileCharacters)
+        # except:
+        #     fileCharacters = str(data[1])
+        f.write(fileCharacters.encode())
+        # print(fileCharacters)
+
+    elif "fileEnd" in userCommand:
+        print("File has been finished reading")
 
     # Otherwise, broadcasts the message to other users
     else:
@@ -172,13 +193,15 @@ def checkCommands(userCommand, user_index, user, conn):
 
         # Consider making seperate loops instead of nested loops?
 
+        #For each string in the user text
         for x in userCommand:
 
-            # Change these shitty variable names
+            # For each user in followlist
             for y in followList:
+                #for each item in the string
                 for z in y:
                     # Breaks out of loop of current user
-                    if x == z:
+                    if x == z or user == z or ("@" + user) == z:
                         print(user + ": " + userMessage)
                         connectorList[followList.index(y)].send(
                             (user + ": " + userMessage).encode())
@@ -261,23 +284,12 @@ def read(conn, mask):
         # Formats message from user and prints
         else:
 
-            # Put an if statement if a file is being recieved, then a while loop that exits upon exit message
-
-            #     filler, user, stringMessage = stringMessage.split(":", 2)
-            #     print("Reading file " + stringMessage)
-
-            # stringMessage = repr(data)
-            # stringMessage = stringMessage[2:len(stringMessage)-1]
-            # print(stringMessage)
-            # else:
-            # fix this
-            # user, stringMessage =  stringMessage.split(":", 1)
-            # formattedMessage = "Recieved message from user " + user + ": " + stringMessage
-            # print(formattedMessage)
-            print("Message recieved " + stringMessage)
+            # print("Message recieved " + stringMessage)
             user = userNames[elementPosition]
 
-            checkCommands(stringMessage, elementPosition, user, conn)
+            #Checks commands of the user
+            print("file name is: " + thisFile)
+            checkCommands(stringMessage, elementPosition, user, conn, thisFile)
 
 
 
