@@ -162,11 +162,6 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
         f = open(thisFile, 'wb')
         print("file recieved from: " + userNames[user_index])
         print('receiving data from file')
-        # data = conn.recv(1000)
-        # print('data:', (data[2]))
-        # write data to a file
-        # try:
-        # print(data[2])
         try:
             fileCharacters = str(data[2])
         except:

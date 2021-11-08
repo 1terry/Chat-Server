@@ -95,6 +95,33 @@ except:
 mysel.register(sock, selectors.EVENT_WRITE)
 sock.send(("REGISTER " + inputUser + " CHAT/1.0").encode())
 
+def send_file(filename, host, port):
+
+    #COPIED PART
+
+    # get the file size
+    filesize = os.path.getsize(filename)
+    # create the client socket
+    s = socket.socket()
+    print(f"[+] Connecting to {host}:{port}")
+    s.connect((host, port))
+    print("[+] Connected.")
+
+    # send the filename and filesize
+
+    # start sending the file
+    with open(filename, "rb") as f:
+        while True:
+            # read the bytes from the file
+            bytes_read = f.read(BUFFER_SIZE)
+            if not bytes_read:
+                # file transmitting is done
+                break
+            s.sendall(bytes_read)
+
+
+
+
 # Infinite loop to recieve input from server
 while keep_running:
     try:
@@ -121,24 +148,13 @@ while keep_running:
                     print("File size: ", os.path.getsize(os.path.basename(fileName)))
 
                     print("Sending: " + inputUser + ": " + fileName)
+                    send_file("test.jpg", "localhost", 5001)
+                   
 
-                    #GET FILESIZE AND SEND
-                    # Sends file to server
-                    # Maybe keep sending until a message END OF FILE
-                    # sock.send(("fileStart: " + inputUser + ": " + fileName).encode())
+
+                    #END OF COPIED PART
                     
-                    f = open(fileName, 'rb')
-                    l = f.read(1024)
-                    # sock.send("!fileOpen " + fileName)
-                    while (l):
-                        sock.send((" !fileReading: " + fileName + ": " ).encode() + l)
-                        print('Sent ', repr(l))
-                        print('sent ' + fileName)
-                        l = f.read(1024)
-                    f.close()
-                    sock.send(("fileEnd").encode())
-                    #Kinda gimmicky, should fix
-                    # sock.send((inputUser + (": File sent")).encode())
+                   
 
                 # working
                 else:
@@ -183,3 +199,18 @@ while keep_running:
     # Server is likely closed, so we exit the program
     except Exception:
         sys.exit()
+
+
+
+#  f = open(fileName, 'rb')
+#                     l = f.read(1024)
+#                     # sock.send("!fileOpen " + fileName)
+#                     while (l):
+#                         sock.send((" !fileReading: " + fileName + ": " ).encode() + l)
+#                         print('Sent ', repr(l))
+#                         print('sent ' + fileName)
+#                         l = f.read(1024)
+#                     f.close()
+#                     sock.send(("fileEnd").encode())
+#                     #Kinda gimmicky, should fix
+#                     # sock.send((inputUser + (": File sent")).encode())

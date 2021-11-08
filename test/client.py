@@ -115,7 +115,6 @@ while keep_running:
                     BUFFER_SIZE = 4096
 
                     # Now lets see if this works
-                    progress = tqdm.tqdm(range(filesize), f"Sending {fileName}", unit="B", unit_scale=True, unit_divisor=1024)
                     with open(fileName, "rb") as f:
                         while True:
                             # read the bytes from the file
@@ -125,9 +124,8 @@ while keep_running:
                                 break
                             # we use sendall to assure transimission in 
                             # busy networks
-                            s.sendall(bytes_read)
-                            # update the progress bar
-                            progress.update(len(bytes_read))
+                            sock.sendall(bytes_read)
+
 
                     # sock.sendall()
                 #     buffer_size = int(size)
