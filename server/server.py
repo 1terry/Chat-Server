@@ -109,34 +109,37 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
     # Attaching a file
     elif ("!attach" in userCommand):
      
-
+        # print(userCommand)
         # Gets the size of the file, enters an error if the file is not found
         try:
-            # size = os.path.getsize(os.path.basename(fileName))
-               #Add a try and except statement
+            #Add a try and except statement
             parts = userCommand.split()
             fileName = parts[2]
             givenTerms = parts[3]
-            print(fileName)
+            print("Name of file: " + fileName)
             global thisFile
             thisFile = fileName     
-
 
         except Exception as e:
             print(e)
 
-    elif "!fileReading" in userCommand:
-        # fileName = data[1]
+    elif "!READING" in userCommand:
+        # THIS WORKS
+        args = userCommand.split(":")
+        fileSize = args[1]
+        print("File size: " + fileSize)
         print("Reading data from: " + thisFile)
-        BUFFER_SIZE = 4096
+
+        #THIS PART DOES NOT
+        # BUFFER_SIZE = int(fileSize)
         # with open(thisFile, "wb") as f:
         #     while True:
-                # bytes_read = conn
-                # if not bytes_read:    
-                #     break
+        #         bytes_read = conn.recv(BUFFER_SIZE)
+        #         if not bytes_read:    
+        #             break
         # write to the file the bytes we just received
-            # f.write(bytes_read)
-        # print(fileCharacters)
+                # f.write(bytes_read)
+        
         print("File has finished reading")
 
     elif "fileEnd" in userCommand:
@@ -151,7 +154,7 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
 
         for x in userCommand:
             userMessage = userMessage + " " + x
-            print(x)
+            # print(x)
 
         # Consider making seperate loops instead of nested loops?
 
@@ -163,8 +166,8 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
                 #for each item in the string
                 for z in y:
                     # Breaks out of loop of current user
-                    if x == z or user == z or ("@" + user) == z:
-                        print(user + ": sent message " + userMessage)
+                    if x == z or user == z:
+                        # print(user + ": sent message " + userMessage)
                         connectorList[followList.index(y)].send(
                             (user + ": " + userMessage).encode())
                         break
@@ -250,26 +253,24 @@ def read(conn, mask):
             user = userNames[elementPosition]
 
             #Checks commands of the user
-            decoded = repr(data)
-            print(decoded)
-            if "!READING" in stringMessage:
-                print("Reading file now")
-                # with open(thisFile, "wb") as f:
-                #     while True:
-                #         # data = conn.recv(1000)
-                #         bytes_read = data
-                #         if not bytes_read or "FINISHED!!" in stringMessage:    
-                #             break
-                #     bytes_ready = bytes_read.strip("!READING")
-                #     f.write(bytes_read)
-                f = open(thisFile, "wb") 
-                stringMessage = stringMessage.strip("!READING")
-                bytes_read = stringMessage.encode()
-                f.write(bytes_read)
+            # if "!READING" in stringMessage:
+            #     print("Reading file now")
+            #     with open(thisFile, "wb") as f:
+            #         while True:
+            #             data = conn.recv(1000)
+            #             bytes_read = data
+            #             if not bytes_read or "FINISHED!!" in stringMessage:    
+            #                 break
+            #         bytes_ready = bytes_read.strip("!READING")
+            #         f.write(bytes_read)
+            #     f = open(thisFile, "wb") 
+            #     stringMessage = stringMessage.strip("!READING")
+            #     bytes_read = stringMessage.encode()
+            #     f.write(bytes_read)
 
-            else:
+            # else:
                 # print(stringMessage)
-                checkCommands(stringMessage, elementPosition, user, data, thisFile)
+            checkCommands(stringMessage, elementPosition, user, data, thisFile)
 
 
 

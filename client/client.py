@@ -110,15 +110,17 @@ while keep_running:
 
                 # If command !attach is used, tries to send file
                 if "!attach" in value:
-                    # This stuff works so far
+                    # Working
                     next_msg = (inputUser + ": " + value).encode()
                     sock.sendall(next_msg)
                     parts = value.split()
                     fileName = parts[1]
                     givenTerms = parts[2]
 
-                    #File size 
-                    print("File size: ", os.path.getsize(os.path.basename(fileName)))
+                    #File size, not really working for some reason 
+                    size = os.path.getsize(os.path.basename(fileName))
+                    size = int(size)
+                    print("File size: " + str(size))
 
                     print("Sending: " + fileName)
                    
@@ -127,8 +129,9 @@ while keep_running:
                         # send the filename and filesize
 
                         # start sending the file
-                    # sock.sendall("!READING".encode())
+                    sock.sendall(("!READING: " + str(size)).encode())
                     with open(fileName, "rb") as f:
+                       
                         while True:
                             # read the bytes from the file
                             bytes_read = f.read(BUFFER_SIZE)
@@ -136,9 +139,8 @@ while keep_running:
                                 # file transmitting is done
                                 break
                             #DO i have to encode this?
-                            message = "!READING".encode() + bytes_read
-                            sock.sendall(message)
-                            print("Sending ..." + repr(message))
+                            sock.sendall(bytes_read)
+                        # print("Sending ...", repr(message))
                     print("File sent")
                     #END OF COPIED PART
                     
