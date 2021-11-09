@@ -109,8 +109,6 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
     # Attaching a file
     elif ("!attach" in userCommand):
      
-        # size = os.path.getsize(os.path.basename(fileName)fileName)
-        # print("File is " + str(size) + " bytes")
 
         # Gets the size of the file, enters an error if the file is not found
         try:
@@ -124,53 +122,22 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
             thisFile = fileName     
 
 
-        # Gets the location of the current directory
-
-            # sends file to client
-
-            # Sending part
-            # for x in givenTerms:
-            #     for y in followList:
-            #         for z in y:
-            #             # Breaks out of loop of current user
-            #             if x == z:
-            #                 print(user + "sent the following file: " + fileName)
-            #                 f = open(fileName, 'rb')
-            #                 l = f.read(1024)
-            #                 while (l):
-            #                     connectorList[followList.index(y)].send(l)
-            #                     print('Sent: ', repr(l))
-            #                     l = f.read(1024)
-            #                 f.close()
-            #                 break
-
-            # sending part done
-            # File section done
-
         except Exception as e:
             print(e)
 
-    # elif "!fileOpen" in userCommand:
-    #     fileName = userCommand.split(" ")
-    #     f = open(fileName[1], 'wb')
-    #     thisFile = fileName
-
     elif "!fileReading" in userCommand:
-        data = userCommand.split(":", 2)
         # fileName = data[1]
-        print(thisFile)
-        f = open(thisFile, 'wb')
-        print("file recieved from: " + userNames[user_index])
-        print('receiving data from file')
-        try:
-            fileCharacters = str(data[2])
-        except:
-            print((data))
-        print(fileCharacters)
-        # except:
-        #     fileCharacters = str(data[1])
-        f.write(fileCharacters.encode())
+        print("Reading data from: " + thisFile)
+        BUFFER_SIZE = 4096
+        # with open(thisFile, "wb") as f:
+        #     while True:
+                # bytes_read = conn
+                # if not bytes_read:    
+                #     break
+        # write to the file the bytes we just received
+            # f.write(bytes_read)
         # print(fileCharacters)
+        print("File has finished reading")
 
     elif "fileEnd" in userCommand:
         print("File has been finished reading")
@@ -190,14 +157,14 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
 
         #For each string in the user text
         for x in userCommand:
-
+            #Maybe make a hack for if the message is greater than a certain legnth
             # For each user in followlist
             for y in followList:
                 #for each item in the string
                 for z in y:
                     # Breaks out of loop of current user
                     if x == z or user == z or ("@" + user) == z:
-                        print(user + ": " + userMessage)
+                        print(user + ": sent message " + userMessage)
                         connectorList[followList.index(y)].send(
                             (user + ": " + userMessage).encode())
                         break
@@ -283,8 +250,26 @@ def read(conn, mask):
             user = userNames[elementPosition]
 
             #Checks commands of the user
-            print("file name is: " + thisFile)
-            checkCommands(stringMessage, elementPosition, user, conn, thisFile)
+            decoded = repr(data)
+            print(decoded)
+            if "!READING" in stringMessage:
+                print("Reading file now")
+                # with open(thisFile, "wb") as f:
+                #     while True:
+                #         # data = conn.recv(1000)
+                #         bytes_read = data
+                #         if not bytes_read or "FINISHED!!" in stringMessage:    
+                #             break
+                #     bytes_ready = bytes_read.strip("!READING")
+                #     f.write(bytes_read)
+                f = open(thisFile, "wb") 
+                stringMessage = stringMessage.strip("!READING")
+                bytes_read = stringMessage.encode()
+                f.write(bytes_read)
+
+            else:
+                # print(stringMessage)
+                checkCommands(stringMessage, elementPosition, user, data, thisFile)
 
 
 
@@ -298,7 +283,7 @@ sock.listen(100)
 # Prints message displaying port and registers socket with selector
 print('The server will wait for connections at port: ' + port)
 print('The server is ready to recieve messages')
-sock.setblocking(False)
+# sock.setblocking(False)
 sel.register(sock, selectors.EVENT_READ, accept)
 
 # Loop checking for input
@@ -317,3 +302,26 @@ while True:
             x.send(("DISCONNECT CHAT/1.0").encode())
         sel.close()
         sys.exit()
+
+# Gets the location of the current directory
+
+            # sends file to client
+
+            # Sending part
+            # for x in givenTerms:
+            #     for y in followList:
+            #         for z in y:
+            #             # Breaks out of loop of current user
+            #             if x == z:
+            #                 print(user + "sent the following file: " + fileName)
+            #                 f = open(fileName, 'rb')
+            #                 l = f.read(1024)
+            #                 while (l):
+            #                     connectorList[followList.index(y)].send(l)
+            #                     print('Sent: ', repr(l))
+            #                     l = f.read(1024)
+            #                 f.close()
+            #                 break
+
+            # sending part done
+            # File section done

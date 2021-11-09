@@ -22,7 +22,7 @@ from urllib.parse import urlparse
 mysel = selectors.DefaultSelector()
 keep_running = True
 inputArgs = sys.argv
-
+global hostPort
 # Method checkData takes in server data as param and checks the control messages and outputs results
 
 
@@ -95,33 +95,6 @@ except:
 mysel.register(sock, selectors.EVENT_WRITE)
 sock.send(("REGISTER " + inputUser + " CHAT/1.0").encode())
 
-def send_file(filename, host, port):
-
-    #COPIED PART
-
-    # get the file size
-    filesize = os.path.getsize(filename)
-    # create the client socket
-    s = socket.socket()
-    print(f"[+] Connecting to {host}:{port}")
-    s.connect((host, port))
-    print("[+] Connected.")
-
-    # send the filename and filesize
-
-    # start sending the file
-    with open(filename, "rb") as f:
-        while True:
-            # read the bytes from the file
-            bytes_read = f.read(BUFFER_SIZE)
-            if not bytes_read:
-                # file transmitting is done
-                break
-            s.sendall(bytes_read)
-
-
-
-
 # Infinite loop to recieve input from server
 while keep_running:
     try:
@@ -147,19 +120,35 @@ while keep_running:
                     #File size 
                     print("File size: ", os.path.getsize(os.path.basename(fileName)))
 
-                    print("Sending: " + inputUser + ": " + fileName)
-                    send_file("test.jpg", "localhost", 5001)
+                    print("Sending: " + fileName)
                    
+                    #Sending code in here
+                    BUFFER_SIZE = 4096
+                        # send the filename and filesize
 
-
+                        # start sending the file
+                    # sock.sendall("!READING".encode())
+                    with open(fileName, "rb") as f:
+                        while True:
+                            # read the bytes from the file
+                            bytes_read = f.read(BUFFER_SIZE)
+                            if not bytes_read:
+                                # file transmitting is done
+                                break
+                            #DO i have to encode this?
+                            message = "!READING".encode() + bytes_read
+                            sock.sendall(message)
+                            print("Sending ..." + repr(message))
+                    print("File sent")
                     #END OF COPIED PART
                     
                    
 
-                # working
+                # If !attach is not entered
                 else:
                     next_msg = (inputUser + ": " + value).encode()
                     sock.sendall(next_msg)
+                    print("SENT" + value)
 
             # Recieves and formats data from server
             data = repr(connection.recv(1024))
@@ -200,17 +189,3 @@ while keep_running:
     except Exception:
         sys.exit()
 
-
-
-#  f = open(fileName, 'rb')
-#                     l = f.read(1024)
-#                     # sock.send("!fileOpen " + fileName)
-#                     while (l):
-#                         sock.send((" !fileReading: " + fileName + ": " ).encode() + l)
-#                         print('Sent ', repr(l))
-#                         print('sent ' + fileName)
-#                         l = f.read(1024)
-#                     f.close()
-#                     sock.send(("fileEnd").encode())
-#                     #Kinda gimmicky, should fix
-#                     # sock.send((inputUser + (": File sent")).encode())
