@@ -31,3 +31,17 @@ Client:
 -python3 client.py second_user chat://localhost:34749
 
 You will then be able to type messages in the client, which will output results in both the other client and the server.
+
+Some commands:
+
+!attach fileName args 
+    - Attaches the filename with the following arguments
+
+!follow args
+    - Follows the topics in args
+
+!unfollow args 
+    - Unfollows topics in args
+
+!follow?
+    - Displays a list of followed items

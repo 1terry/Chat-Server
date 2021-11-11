@@ -1,8 +1,9 @@
 """
 File for chat server
 Created for CS 3357 By Terrence Ju
-Oct 21, 2021
+Nov 09, 2021
 Server will accept connections from clients and return messages to all clients
+Server will send and recieve files
 Server will close client connections when it closes
 Server will also display control messages such as error and disconnect messages
 """
@@ -12,6 +13,7 @@ import selectors
 import socket
 import sys
 import os
+import time
 
 from array import *
 
@@ -26,16 +28,16 @@ initField = []
 followList = []
 global fileName
 thisFile = ""
+sizeFile = 0
 
 def checkCommands(userCommand, user_index, user, conn, fileSending):
     # All strings have a space at the start when sent, so we include these in comparisons
     userList = ""
     followedTerms = ""
-    buffer_size = 0
-    # print(userCommand)
+    print(user)
 
     # Checks if list command is entered and sends using :, as this will be split
-    if (userCommand == " !list"):
+    if ("!list" in userCommand):
         for x in userNames:
             userList = userList + x + ", "
         print("Users: " + userList)
@@ -50,8 +52,6 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
         print(displayFollowed)
         connectorList[user_index].send((displayFollowed).encode())
 
-    # Check that follow is
-
     # Adds item to follow list
     elif ("!follow" in userCommand):
 
@@ -62,6 +62,7 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
 
         topics = userCommand.split()
 
+        topics[2] = topics[2].strip("@")
         print(topics[2])
         if topics[2] in followList[user_index]:
             print("Topic already present")
@@ -83,22 +84,25 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
         print(displayFollowed)
 
         topics = userCommand.split()
-
-        if (topics[1] == "@all" or topics[1] == userNames[user_index]):
+        removedTopic = topics[2]
+        
+        if (removedTopic == "@all" or removedTopic == userNames[user_index]):
             connectorList[user_index].send(
-                ("Error: Cannot remove tags").encode())
+                ("Error: Cannot remove tags: " + removedTopic).encode())
             print("Cannot remove tags")
 
         # Tries to remove the followed item from the list and outputs error if it does not exist
         else:
             try:
-                followList[user_index].remove(topics[1])
+                followList[user_index].remove(removedTopic)
+                connectorList[user_index].send(
+                    ("Unfollowed: " + removedTopic).encode())
             except:
                 connectorList[user_index].send(
                     ("Error: Tags not in follow list").encode())
                 print("Tags not in follow list")
 
-        print(displayFollowed)
+        print(followList[user_index])
 
     # If the user enters exit, the server exits
     # Make sure to deal with connections and stuff
@@ -109,7 +113,6 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
     # Attaching a file
     elif ("!attach" in userCommand):
      
-        # print(userCommand)
         # Gets the size of the file, enters an error if the file is not found
         try:
             #Add a try and except statement
@@ -121,30 +124,90 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
             thisFile = fileName     
 
         except Exception as e:
-            print(e)
+            print(e)                                   
 
     elif "!READING" in userCommand:
-        # THIS WORKS
-        args = userCommand.split(":")
+        # Splits the commands to recieve file size
+        args = userCommand.split(" ")
         fileSize = args[1]
         print("File size: " + fileSize)
         print("Reading data from: " + thisFile)
+        fileSize = int(fileSize)
 
-        #THIS PART DOES NOT
-        # BUFFER_SIZE = int(fileSize)
-        # with open(thisFile, "wb") as f:
-        #     while True:
-        #         bytes_read = conn.recv(BUFFER_SIZE)
-        #         if not bytes_read:    
-        #             break
-        # write to the file the bytes we just received
-                # f.write(bytes_read)
-        
+        # Loops through the file 
+        readingBuffer = 4096
+        readAmount = 0
+
+        #Should loop through for the size of the file
+        while (readAmount < fileSize):
+            # If the currently read buffer is greater than the size of the file 
+            # set it to equal the amount needed to finish reading
+            if (readAmount + readingBuffer < fileSize):
+                readingBuffer = fileSize - readAmount
+
+            #Opens file and starts reading
+            with open(thisFile, "wb") as f:
+                while True:
+
+                    #Reads data from server
+                    bytes_read = conn.recv(readingBuffer)
+                    readAmount = readAmount + readingBuffer
+                    #Ends if message is recieved from server
+                    if "DONE!" in repr(bytes_read):
+                        break 
+
+                    f.write(bytes_read)
+
         print("File has finished reading")
 
-    elif "fileEnd" in userCommand:
-        print("File has been finished reading")
+        # Gets terms from arguments
+        argsLength = len(args)
+        fileName = args[2]
+        terms = []
 
+        #Creates an array storing the terms in the statement
+        for x in args:
+            if (x != fileName and x != str(fileSize) and "!READING" not in x):
+                terms.append(x)
+
+        #Converts array to readable string to send
+        termsString = ""
+        for x in terms:
+            termsString = termsString + " " + x
+
+        #sends the file to each client
+        readingBuffer = 4096
+        # args.insert(0, user)
+        # print(args)
+        # Loops through the input string and compares it to the followed items in the followed List
+        for x in args:
+            for y in followList:
+                for z in y:
+                    # If a string matches a followed item, sends file
+                    if x == z:
+                        # Lets recieving client know that file has been sent their way, puts a buffer so messages don't concatenate
+                        connectorList[followList.index(y)].send(("FILESENT").encode())
+                        time.sleep(1)
+                        connectorList[followList.index(y)].send(("!READING: " + str(fileSize) + " " + fileName + " " + termsString).encode())
+                        position = followList.index(y)
+
+                        # Adds a buffer so that messages don't concatenate
+                        time.sleep(1.5)
+                        #Opens file and sends until it is finished reading
+                        with open(fileName, "rb") as f:
+                            while True:
+                                # read the bytes
+                                bytes_read = f.read(readingBuffer)
+                                # file is done reading
+                                if not bytes_read:
+                                    break
+                                # Sends data to server
+                                connectorList[followList.index(y)].sendall(bytes_read)
+                        # Notifies that file is done sending
+                        print("File distributed")
+                        connectorList[followList.index(y)].sendall("DONE!".encode())
+
+                  
     # Otherwise, broadcasts the message to other users
     else:
 
@@ -152,22 +215,24 @@ def checkCommands(userCommand, user_index, user, conn, fileSending):
         userCommand = userCommand.split()
         userMessage = ""
 
+        #Discludes user name from user message
+        userCommand.insert(0, user)
         for x in userCommand:
-            userMessage = userMessage + " " + x
-            # print(x)
+            if (user not in x):
+                userMessage = userMessage + " " + x
 
         # Consider making seperate loops instead of nested loops?
-
+        print("String searched: " + userMessage)
         #For each string in the user text
         for x in userCommand:
-            #Maybe make a hack for if the message is greater than a certain legnth
+
             # For each user in followlist
             for y in followList:
-                #for each item in the string
+                #for each item in the follow list
                 for z in y:
                     # Breaks out of loop of current user
-                    if x == z or user == z:
-                        # print(user + ": sent message " + userMessage)
+                    if x == z:
+                        print(user + ": sent message " + userMessage)
                         connectorList[followList.index(y)].send(
                             (user + ": " + userMessage).encode())
                         break
@@ -213,7 +278,6 @@ def accept(sock, mask):
             followList[newUser].append("@all")
             print(
                 'Connection established, waiting to recieve messages from user "' + user + '"...')
-            connection.setblocking(False)
             sel.register(connection, selectors.EVENT_READ, read)
             connection.sendall(("200 Registration successful").encode())
 
@@ -248,31 +312,10 @@ def read(conn, mask):
 
         # Formats message from user and prints
         else:
-
-            # print("Message recieved " + stringMessage)
+        
             user = userNames[elementPosition]
-
-            #Checks commands of the user
-            # if "!READING" in stringMessage:
-            #     print("Reading file now")
-            #     with open(thisFile, "wb") as f:
-            #         while True:
-            #             data = conn.recv(1000)
-            #             bytes_read = data
-            #             if not bytes_read or "FINISHED!!" in stringMessage:    
-            #                 break
-            #         bytes_ready = bytes_read.strip("!READING")
-            #         f.write(bytes_read)
-            #     f = open(thisFile, "wb") 
-            #     stringMessage = stringMessage.strip("!READING")
-            #     bytes_read = stringMessage.encode()
-            #     f.write(bytes_read)
-
-            # else:
-                # print(stringMessage)
-            checkCommands(stringMessage, elementPosition, user, data, thisFile)
-
-
+            checkCommands(stringMessage, elementPosition, user, conn, thisFile)
+            print("Message recieved: " + stringMessage)
 
 
 # Binds socket and generates a random port, then listens on it
@@ -304,25 +347,3 @@ while True:
         sel.close()
         sys.exit()
 
-# Gets the location of the current directory
-
-            # sends file to client
-
-            # Sending part
-            # for x in givenTerms:
-            #     for y in followList:
-            #         for z in y:
-            #             # Breaks out of loop of current user
-            #             if x == z:
-            #                 print(user + "sent the following file: " + fileName)
-            #                 f = open(fileName, 'rb')
-            #                 l = f.read(1024)
-            #                 while (l):
-            #                     connectorList[followList.index(y)].send(l)
-            #                     print('Sent: ', repr(l))
-            #                     l = f.read(1024)
-            #                 f.close()
-            #                 break
-
-            # sending part done
-            # File section done
